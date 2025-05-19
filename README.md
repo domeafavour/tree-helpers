@@ -1,88 +1,278 @@
-# React Hook Package Template
+# Tree Helpers
 
-- Build with [tsup](https://tsup.egoist.dev/)
-- Publish to npm with github actions
+[![npm version](https://img.shields.io/npm/v/@domeadev/tree-helpers.svg)](https://www.npmjs.com/package/@domeadev/tree-helpers)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
-## Prepare
+A collection of TypeScript utility functions for managing tree data structures, focusing on operations like navigation, manipulation, and state management of hierarchical data.
 
-Update package.json with your package `name`, `description`, `keywords`, `author`, `repository`, etc.
+## Installation
 
-For example:
+### npm
 
-- package name: `react-use-my-hook`
-- description: `A react hook package`
-- keywords: `["react", "hook", "your-keyword"]`
-- author: `John`
-- repository: `https://github.com/john/react-use-my-hook.git`
+```bash
+npm install @domeadev/tree-helpers
+```
 
-```diff
+### Yarn
+
+```bash
+yarn add @domeadev/tree-helpers
+```
+
+### pnpm
+
+```bash
+pnpm add @domeadev/tree-helpers
+```
+
+## Core Concepts
+
+Tree Helpers works with these basic concepts:
+
+- **Nodes**: Any object with a unique key identifier
+- **Trees**: Hierarchical structures where nodes can have child nodes
+- **CheckedState**: For checkable trees, a collection of keys representing checked nodes
+
+## API Reference
+
+### Tree Navigation
+
+#### `walkNodes(nodes, getChildren, fn)`
+
+Walks through all nodes in a tree, executing a callback function on each one.
+
+```typescript
+walkNodes<T>(
+  nodes: T[],
+  getChildren: (node: T) => T[] | undefined,
+  fn: (node: T, children: T[] | undefined) => void
+): void
+```
+
+#### `flattenNodes(nodes, getChildren)`
+
+Flattens a tree structure into a single-level collection.
+
+```typescript
+flattenNodes<T>(
+  nodes: T[],
+  getChildren: (node: T) => T[]
+): Set<T>
+```
+
+#### `getAncestorKeys(keyToChildKeysMap, key)`
+
+Gets all ancestor keys for a given node key.
+
+```typescript
+getAncestorKeys(
+  keyToChildKeysMap: KeyToChildKeysMap,
+  key: NodeKey
+): NodeKey[]
+```
+
+### Tree Construction
+
+#### `makeNodesMap(nodes, getKey, getChildren)`
+
+Creates a map of nodes indexed by their keys.
+
+```typescript
+makeNodesMap<T>(
+  nodes: T[],
+  getKey: (node: T) => NodeKey,
+  getChildren: (node: T) => T[]
+): Map<NodeKey, T>
+```
+
+#### `makeKeyToChildKeysMap(tree, getKey, getChildren)`
+
+Creates a map that relates each node key to its child keys.
+
+```typescript
+makeKeyToChildKeysMap<T>(
+  tree: T[],
+  getKey: (n: T) => NodeKey,
+  getChildren: (n: T) => T[] | undefined
+): KeyToChildKeysMap
+```
+
+#### `makeRowsTree({ rows, getKey, getChildren, rootKeys, childrenKey })`
+
+Transforms a flat array of rows into a hierarchical tree structure.
+
+```typescript
+makeRowsTree<T extends object, ChildrenKey extends string>({
+  rows,
+  getKey,
+  getChildren,
+  rootKeys,
+  childrenKey,
+}: {
+  rows: T[];
+  getKey: (node: T) => NodeKey;
+  getChildren: (node: T) => T[];
+  rootKeys: NodeKey[];
+  childrenKey: ChildrenKey;
+}): TreeNode<T, ChildrenKey>[]
+```
+
+### Tree Manipulation
+
+#### `removeNodeKey(keyToChildKeysMap, keyToRemove)`
+
+Removes a node and all its descendants from the key-to-child-keys map.
+
+```typescript
+removeNodeKey(
+  keyToChildKeysMap: KeyToChildKeysMap,
+  keyToRemove: NodeKey
+): KeyToChildKeysMap
+```
+
+### Checkable Tree Operations
+
+#### `toggleNodeCheckedState(keyToChildKeysMap, checkedState, currentNode)`
+
+Toggles a node's checked state and updates its children and ancestors accordingly.
+
+```typescript
+toggleNodeCheckedState(
+  keyToChildKeysMap: KeyToChildKeysMap,
+  checkedState: CheckedState,
+  currentNode: CheckableNode
+): Set<NodeKey>
+```
+
+#### `autoUncheckParentNode(keyToChildKeysMap, unCheckedKey, checkedState)`
+
+Automatically unchecks a parent node when all its children are unchecked.
+
+```typescript
+autoUncheckParentNode(
+  keyToChildKeysMap: KeyToChildKeysMap,
+  unCheckedKey: NodeKey,
+  checkedState: Set<NodeKey>
+): Set<NodeKey>
+```
+
+## Types
+
+```typescript
+// Unique identifier for a node
+type NodeKey = string | number;
+
+// Map relating each node key to its child keys
+type KeyToChildKeysMap = Record<NodeKey, NodeKey[]>;
+
+// Node with a checkable state
+interface CheckableNode {
+  key: NodeKey;
+  checked: boolean;
+}
+
+// Collection of checked node keys
+type CheckedState = Set<NodeKey> | NodeKey[];
+
+// Generic tree node structure
+type TreeNode<T extends object, ChildrenKey extends string> = T &
+  Record<ChildrenKey, TreeNode<T, ChildrenKey>[]>;
+```
+
+## Examples
+
+### Creating a tree from flat data
+
+```typescript
+import { makeRowsTree } from "@domeadev/tree-helpers";
+
+const rows = [
+  { id: 1, name: "Parent", parentId: null },
+  { id: 2, name: "Child 1", parentId: 1 },
+  { id: 3, name: "Child 2", parentId: 1 },
+  { id: 4, name: "Grandchild", parentId: 2 },
+];
+
+const tree = makeRowsTree({
+  rows,
+  getKey: (row) => row.id,
+  getChildren: (row) => rows.filter((child) => child.parentId === row.id),
+  rootKeys: [1],
+  childrenKey: "children",
+});
+
+// Result:
+// [
+//   {
+//     id: 1,
+//     name: 'Parent',
+//     parentId: null,
+//     children: [
+//       {
+//         id: 2,
+//         name: 'Child 1',
+//         parentId: 1,
+//         children: [
+//           {
+//             id: 4,
+//             name: 'Grandchild',
+//             parentId: 2,
+//             children: []
+//           }
+//         ]
+//       },
+//       {
+//         id: 3,
+//         name: 'Child 2',
+//         parentId: 1,
+//         children: []
+//       }
+//     ]
+//   }
+// ]
+```
+
+### Managing checked states in a checkable tree
+
+```typescript
+import {
+  toggleNodeCheckedState,
+  makeKeyToChildKeysMap,
+} from "@domeadev/tree-helpers";
+
+const treeData = [
   {
---  "name": "package-name",
-++  "name": "react-use-my-hook",
-    "version": "0.0.1",
---  "description": "<description>",
-++  "description": "A react hook package",
-    "main": ".dist/index.js",
-    "types": ".dist/index.d.ts",
-    "files": [
-      ".dist"
+    key: "parent",
+    label: "Parent",
+    children: [
+      { key: "child1", label: "Child 1" },
+      { key: "child2", label: "Child 2" },
     ],
-    "keywords": [
-      "react",
---    "hook"
-++    "hook",
-++    "your-keyword"
-    ],
---  "author": "<author name>",
-++  "author": "John",
-    "license": "MIT",
-    "peerDependencies": {
-      "react": ">=16.8.0",
-      "react-dom": ">=16.8.0"
-    },
-    "devDependencies": {
-      "@testing-library/dom": "^10.4.0",
-      "@testing-library/jest-dom": "^6.6.3",
-      "@testing-library/react": "^16.1.0",
-      "@types/react": ">=16.8.0",
-      "@types/react-dom": ">=16.8.0",
-      "happy-dom": "^16.5.3",
-      "react": ">=16.8.0",
-      "react-dom": ">=16.8.0",
-      "tsup": "^8.0.2",
-      "typescript": "^5.4.5",
-      "typescript": "^5.4.5",
-      "vitest": "^2.1.8"
-    },
-    "repository": {
-      "type": "git",
---    "url": "<your repo url>"
-++    "url": "https://github.com/john/react-use-my-hook.git"
-    },
-    "scripts": {
-      "test": "vitest",
-      "build": "tsup"
-    }
-  }
+  },
+];
 
+// Create a map of parent-child relationships
+const keyToChildKeysMap = makeKeyToChildKeysMap(
+  treeData,
+  (node) => node.key,
+  (node) => node.children
+);
+
+// Initial checked state
+let checkedState = new Set(["child1"]);
+
+// Toggle the 'parent' node to checked
+const parentNode = { key: "parent", checked: true };
+checkedState = toggleNodeCheckedState(
+  keyToChildKeysMap,
+  checkedState,
+  parentNode
+);
+
+// Result: Set { 'child1', 'parent', 'child2' }
+// When a parent is checked, all children are automatically checked
 ```
 
-## Build
+## License
 
-```bash
-pnpm build
-```
-
-## Test
-
-```bash
-pnpm test
-```
-
-## Publish
-
-Add a [github secret](https://docs.github.com/en/actions/security-guides/using-secrets-in-github-actions) `NPM_PUBLISH_TOKEN` with your [npm access token](https://docs.npmjs.com/about-access-tokens).
-
-![secrets and variables](media/image.png)
-
-Draft a new release on github, then the github actions will publish the package to npm.
+MIT © [domeafavour](https://github.com/domeafavour/tree-helpers)
