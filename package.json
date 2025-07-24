@@ -1,6 +1,6 @@
 {
   "name": "@domeadev/tree-helpers",
-  "version": "0.0.1",
+  "version": "0.1.1",
   "description": "A collection of functions for managing tree structures",
   "types": ".dist/index.d.ts",
   "main": ".dist/index.js",
