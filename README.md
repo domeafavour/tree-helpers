@@ -97,6 +97,18 @@ makeKeyToChildKeysMap<T>(
 ): KeyToChildKeysMap
 ```
 
+#### `makeTree(rows, getChildren, transformNode)`
+
+Recursively transforms rows into a tree structure with custom node transformation.
+
+```typescript
+makeTree<R extends object, T>(
+  rows: R[],
+  getChildren: (row: R) => R[] | undefined,
+  transformNode: (row: R, childNodes: T[], children?: R[]) => T | null
+): T[]
+```
+
 #### `makeRowsTree({ rows, getKey, getChildren, rootKeys, childrenKey })`
 
 Transforms a flat array of rows into a hierarchical tree structure.
@@ -180,6 +192,65 @@ type TreeNode<T extends object, ChildrenKey extends string> = T &
 ```
 
 ## Examples
+
+### Building a custom tree structure
+
+```typescript
+import { makeTree } from '@domeadev/tree-helpers';
+
+interface Row {
+  id: number;
+  name: string;
+  parentId: number | null;
+}
+
+interface TreeNode {
+  id: number;
+  name: string;
+  children: TreeNode[];
+}
+
+const rows: Row[] = [
+  { id: 1, name: 'Root', parentId: null },
+  { id: 2, name: 'Branch A', parentId: 1 },
+  { id: 3, name: 'Branch B', parentId: 1 },
+  { id: 4, name: 'Leaf A1', parentId: 2 },
+  { id: 5, name: 'Leaf A2', parentId: 2 },
+];
+
+const tree = makeTree(
+  rows.filter(row => row.parentId === null), // Start with root nodes
+  (row) => rows.filter(child => child.parentId === row.id), // Get children
+  (row, childNodes) => ({
+    id: row.id,
+    name: row.name,
+    children: childNodes
+  })
+);
+
+// Result:
+// [
+//   {
+//     id: 1,
+//     name: 'Root',
+//     children: [
+//       {
+//         id: 2,
+//         name: 'Branch A',
+//         children: [
+//           { id: 4, name: 'Leaf A1', children: [] },
+//           { id: 5, name: 'Leaf A2', children: [] }
+//         ]
+//       },
+//       {
+//         id: 3,
+//         name: 'Branch B',
+//         children: []
+//       }
+//     ]
+//   }
+// ]
+```
 
 ### Creating a tree from flat data
 
