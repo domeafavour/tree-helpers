@@ -4,6 +4,7 @@ export * from "./getAncestorKeys";
 export * from "./makeKeyToChildKeysMap";
 export * from "./makeNodesMap";
 export * from "./makeRowsTree";
+export * from "./makeTree";
 export * from "./removeNodeKey";
 export * from "./toggleNodeCheckedState";
 export * from "./typings";
