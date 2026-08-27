@@ -3,6 +3,7 @@ export * from "./flattenNodes";
 export * from "./getAncestorKeys";
 export * from "./makeKeyToChildKeysMap";
 export * from "./makeNodesMap";
+export * from "./moveNode";
 export * from "./makeRowsTree";
 export * from "./makeTree";
 export * from "./removeNodeKey";

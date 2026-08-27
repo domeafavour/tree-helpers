@@ -142,6 +142,22 @@ removeNodeKey(
 ): KeyToChildKeysMap
 ```
 
+#### `moveNode(keyToChildKeysMap, keyToMove, options?)`
+
+Moves a node to a new parent or reorders it within its current parent.
+
+```typescript
+moveNode(
+  keyToChildKeysMap: KeyToChildKeysMap,
+  keyToMove: NodeKey,
+  options?: { newParentKey?: NodeKey; index?: number }
+): KeyToChildKeysMap
+```
+
+- `newParentKey` — move the node to become a child of this key
+- `index` — insert at this position (defaults to end of the children list)
+- Throws if `newParentKey` is a descendant of `keyToMove` (cycle prevention)
+
 ### Checkable Tree Operations
 
 #### `toggleNodeCheckedState(keyToChildKeysMap, checkedState, currentNode)`
